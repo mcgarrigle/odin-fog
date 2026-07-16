@@ -2,6 +2,7 @@ package main
 
 import "core:fmt"
 import "core:os"
+import "core:strconv"
 
 variables: []string = {
   "HOST",
@@ -47,15 +48,22 @@ run :: proc(args: []string) {
 
 // --------------------------------------------------------------
 
+build_disk :: proc(device: string , size: int) -> string {
+  return "disk"
+}
+
 build_vm :: proc(guest: map[string]string) {
+  size, ok := strconv.parse_int(guest["ROOT_SIZE"])
+  disk := build_disk(guest["ROOT_DEVICE"], size)
   args := [dynamic]string{}
+  append(&args, "virt-install", "--import", "--virt-type", "kvm", "--graphics", "none", "--noautoconsole")
   append(&args, "--name", guest["HOST"]) 
   append(&args, "--osinfo", guest["OS"]) 
   append(&args, "--vcpu", guest["CPUS"]) 
   append(&args, "--memory", guest["MEMORY"]) 
   append(&args, "--machine", guest["MACHINE"])
   append(&args, "--boot", guest["BOOT"])
-  append(&args, "--disk", guest["DISK"])
+  append(&args, "--disk", disk)
   append(&args, "--cloud-init", guest["CLOUD_INIT"])
   append(&args, "--network", guest["NETWORK"])
 	fmt.println(args)
