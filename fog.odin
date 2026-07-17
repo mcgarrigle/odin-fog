@@ -2,7 +2,12 @@ package main
 
 import "core:fmt"
 import "core:os"
+import "core:path/filepath"
+import "core:math/rand"
+import "core:strings"
 import "core:strconv"
+import "core:encoding/hex"
+
 
 variables: []string = {
   "HOST",
@@ -48,37 +53,78 @@ run :: proc(args: []string) {
 
 // --------------------------------------------------------------
 
-build_disk :: proc(device: string , size: int) -> string {
-  return "disk"
+tempfile :: proc() -> string {
+  return fmt.aprintf("/tmp/%x", rand.uint64())
 }
 
-build_vm :: proc(guest: map[string]string) {
+var :: proc(name: string) -> string {
+  parts := []string{"${", name, "}"}
+  return strings.concatenate(parts)
+}
+
+template :: proc(text: string, vars: map[string]string) -> string {
+  result := text
+  for v in vars {
+    pattern := var(v)
+    result, _ = strings.replace_all(result, pattern, vars[v])
+  }
+  return result
+}
+
+make_cloud_init_file :: proc(file: string, vars: map[string]string) -> string {
+  path, _ := filepath.join({"cloud-init", file})
+  fmt.println(tempfile())
+  return path
+}
+
+// --------------------------------------------------------------
+
+build_disk :: proc(guest: map[string]string) -> string {
   size, ok := strconv.parse_int(guest["ROOT_SIZE"])
-  disk := build_disk(guest["ROOT_DEVICE"], size)
+  return "device=disk"
+}
+
+// --------------------------------------------------------------
+
+build_cloud_init :: proc(guest: map[string]string) -> string {
+  // meta_data := template("aa ${HOST} ${IMAGE}bb", guest)
+  path := make_cloud_init_file("meta-data", guest)
+  fmt.println(path)
+  return "meta-data=file"
+}
+
+// --------------------------------------------------------------
+
+build_vm :: proc(guest: map[string]string, disk: string, cloud_init: string) {
   args := [dynamic]string{}
   append(&args, "virt-install", "--import", "--virt-type", "kvm", "--graphics", "none", "--noautoconsole")
   append(&args, "--name", guest["HOST"]) 
   append(&args, "--osinfo", guest["OS"]) 
-  append(&args, "--vcpu", guest["CPUS"]) 
+  append(&args, "--vcpu", guest["CPUS"])
   append(&args, "--memory", guest["MEMORY"]) 
   append(&args, "--machine", guest["MACHINE"])
   append(&args, "--boot", guest["BOOT"])
   append(&args, "--disk", disk)
-  append(&args, "--cloud-init", guest["CLOUD_INIT"])
+  append(&args, "--cloud-init", cloud_init)
   append(&args, "--network", guest["NETWORK"])
 	fmt.println(args)
   // run({"virsh", "list"})
 }
 
+build_guest :: proc(guest: map[string]string) {
+  disk := build_disk(guest)
+  cloud_init := build_cloud_init(guest)
+  build_vm(guest, disk, cloud_init)
+}
+ 
 // -- commands --------------------------------------------------
 
 command_up :: proc(args: []string) {
-	fmt.println("command up")
-  build_vm(guest())
+  build_guest(guest())
 }
 
 command_down :: proc(args: []string) {
-	fmt.println("command down")
+  fmt.println("command down")
 }
 
 dispatch :: proc(args: []string) {
@@ -91,6 +137,8 @@ dispatch :: proc(args: []string) {
 	  fmt.println("unknown command")
   }
 }
+
+// -- main ------------------------------------------------------
 
 main :: proc() {
   dispatch(os.args[1:])
