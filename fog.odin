@@ -9,6 +9,8 @@ import "core:strconv"
 import "core:encoding/hex"
 
 
+base_directory: string
+
 variables: []string = {
   "HOST",
   "MACHINE",
@@ -42,7 +44,7 @@ guest :: proc() -> map[string]string {
   return result
 }
 
-run :: proc(args: []string) {
+run_slice :: proc(args: []string) {
   command := os.Process_Desc{command=args}
 
   state, stdout, stderr, err := os.process_exec(desc=command, allocator=context.allocator)
@@ -50,6 +52,10 @@ run :: proc(args: []string) {
     fmt.panicf("Failed to start command: %v", err)
   }
   fmt.println(string(stdout))
+}
+
+run :: proc(args: ..string) {
+  run_slice(args)
 }
 
 // --------------------------------------------------------------
@@ -72,8 +78,8 @@ template :: proc(text: string, vars: map[string]string) -> string {
   return result
 }
 
-make_cloud_init_file :: proc(file: string, guest: map[string]string) -> string {
-  template_path, _ := filepath.join({"cloud-init", file})
+cloud_init_file :: proc(file: string, guest: map[string]string) -> string {
+  template_path, _ := filepath.join({base_directory, "cloud-init", file})
   t, err := os.read_entire_file(template_path, context.allocator)
   config := template(string(t), guest)
   path := tempfile()
@@ -82,17 +88,28 @@ make_cloud_init_file :: proc(file: string, guest: map[string]string) -> string {
 }
 
 build_cloud_init :: proc(guest: map[string]string) -> string {
-  user_path := make_cloud_init_file("user-data", guest)
-  meta_path := make_cloud_init_file("meta-data", guest)
-  netw_path := make_cloud_init_file("network-config-static", guest)
+  user_path := cloud_init_file("user-data", guest)
+  meta_path := cloud_init_file("meta-data", guest)
+  netw_path := cloud_init_file("network-config-static", guest)
   config: []string = {"user-data=", user_path, ",meta-data=", meta_path, ",network-config=", netw_path}
   return strings.concatenate(config)
 }
 
 // --------------------------------------------------------------
 
+upload_image :: proc() {
+  // virsh vol-create-as --pool "${POOL}" --name "$2" --capacity 1m
+  // virsh vol-upload --pool "${POOL}" --vol "$2" --file "$1"
+  // virsh vol-list --pool "${POOL}"
+}
+
 build_disk :: proc(guest: map[string]string) -> string {
   size, ok := strconv.parse_int(guest["ROOT_SIZE"])
+  image_path, _ := filepath.join({base_directory, "images", guest["IMAGE"]})
+  disk_path, _  := filepath.join({base_directory, "images", guest["HOST"]})
+  run("echo", "truncate", "--reference", image_path, "--size", guest["ROOT_SIZE"], disk_path)
+  run("echo", "virt-resize", "--quiet", "--expand", guest["ROOT_DEVICE"], image_path, disk_path)
+  // upload "${DISK}" "${PRIMARY}"
   return "device=disk"
 }
 
@@ -115,7 +132,7 @@ build_vm :: proc(guest: map[string]string, disk: string, cloud_init: string) {
     "--cloud-init", cloud_init
   }
 	// fmt.println(args)
-  run(args)
+  run_slice(args)
 }
 
 build_guest :: proc(guest: map[string]string) {
@@ -148,5 +165,6 @@ dispatch :: proc(args: []string) {
 // -- main ------------------------------------------------------
 
 main :: proc() {
+  base_directory, _ = os.get_executable_directory(context.allocator)
   dispatch(os.args[1:])
 }

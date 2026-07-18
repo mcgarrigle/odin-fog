@@ -8,7 +8,7 @@ export CPUS="2"
 export MEMORY="4096"
 
 export ROOT_DEVICE="/dev/sda4"
-export ROOT_SIZE="10G"
+export ROOT_SIZE="+10G"
 
 export NETWORK="network=bridge"
 export NETWORK_DEVICE="enp1s0"
