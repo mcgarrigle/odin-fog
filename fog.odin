@@ -27,6 +27,7 @@ variables: []string = {
   "IP_ADDRESS",
   "GATEWAY_ADDRESS",
   "DNS_SERVER",
+  "USER",
   "PASSWORD",
   "SSH_PUBLIC_KEY"
 }
@@ -54,10 +55,10 @@ run :: proc(args: []string) {
 // --------------------------------------------------------------
 
 tempfile :: proc() -> string {
-  return fmt.aprintf("/tmp/%x", rand.uint64())
+  return fmt.aprintf("/tmp/fog.%x", rand.uint64())
 }
 
-var :: proc(name: string) -> string {
+varname :: proc(name: string) -> string {
   parts := []string{"${", name, "}"}
   return strings.concatenate(parts)
 }
@@ -65,16 +66,27 @@ var :: proc(name: string) -> string {
 template :: proc(text: string, vars: map[string]string) -> string {
   result := text
   for v in vars {
-    pattern := var(v)
+    pattern := varname(v)
     result, _ = strings.replace_all(result, pattern, vars[v])
   }
   return result
 }
 
-make_cloud_init_file :: proc(file: string, vars: map[string]string) -> string {
-  path, _ := filepath.join({"cloud-init", file})
-  fmt.println(tempfile())
+make_cloud_init_file :: proc(file: string, guest: map[string]string) -> string {
+  template_path, _ := filepath.join({"cloud-init", file})
+  t, err := os.read_entire_file(template_path, context.allocator)
+  config := template(string(t), guest)
+  path := tempfile()
+  err = os.write_entire_file(path, config)
   return path
+}
+
+build_cloud_init :: proc(guest: map[string]string) -> string {
+  user_path := make_cloud_init_file("user-data", guest)
+  meta_path := make_cloud_init_file("meta-data", guest)
+  netw_path := make_cloud_init_file("network-config-static", guest)
+  config: []string = {"user-data=", user_path, ",meta-data=", meta_path, ",network-config=", netw_path}
+  return strings.concatenate(config)
 }
 
 // --------------------------------------------------------------
@@ -86,29 +98,24 @@ build_disk :: proc(guest: map[string]string) -> string {
 
 // --------------------------------------------------------------
 
-build_cloud_init :: proc(guest: map[string]string) -> string {
-  // meta_data := template("aa ${HOST} ${IMAGE}bb", guest)
-  path := make_cloud_init_file("meta-data", guest)
-  fmt.println(path)
-  return "meta-data=file"
-}
-
-// --------------------------------------------------------------
-
 build_vm :: proc(guest: map[string]string, disk: string, cloud_init: string) {
-  args := [dynamic]string{}
-  append(&args, "virt-install", "--import", "--virt-type", "kvm", "--graphics", "none", "--noautoconsole")
-  append(&args, "--name", guest["HOST"]) 
-  append(&args, "--osinfo", guest["OS"]) 
-  append(&args, "--vcpu", guest["CPUS"])
-  append(&args, "--memory", guest["MEMORY"]) 
-  append(&args, "--machine", guest["MACHINE"])
-  append(&args, "--boot", guest["BOOT"])
-  append(&args, "--disk", disk)
-  append(&args, "--cloud-init", cloud_init)
-  append(&args, "--network", guest["NETWORK"])
-	fmt.println(args)
-  // run({"virsh", "list"})
+  args: []string = {"echo", "virt-install", 
+    "--import", 
+    "--noautoconsole",
+    "--virt-type", "kvm", 
+    "--graphics", "none", 
+    "--name", guest["HOST"],
+    "--osinfo", guest["OS"],
+    "--vcpu", guest["CPUS"],
+    "--memory", guest["MEMORY"],
+    "--machine", guest["MACHINE"],
+    "--boot", guest["BOOT"],
+    "--network", guest["NETWORK"],
+    "--disk", disk,
+    "--cloud-init", cloud_init
+  }
+	// fmt.println(args)
+  run(args)
 }
 
 build_guest :: proc(guest: map[string]string) {
