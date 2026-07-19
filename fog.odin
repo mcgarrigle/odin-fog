@@ -7,42 +7,68 @@ import "core:math/rand"
 import "core:strings"
 import "core:strconv"
 import "core:encoding/hex"
+import "core:reflect"
 
 
 base_directory: string
 
-variables: []string = {
-  "HOST",
-  "MACHINE",
-  "IMAGE",
-  "OS",
-  "CPUS",
-  "MEMORY",
-  "POOL",
-  "DISK",
-  "ROOT_DEVICE",
-  "ROOT_SIZE",
-  "BOOT",
-  "BOOTPROTO",
-  "NETWORK",
-  "NETWORK_DEVICE",
-  "IP_ADDRESS",
-  "GATEWAY_ADDRESS",
-  "DNS_SERVER",
-  "USER",
-  "PASSWORD",
-  "SSH_PUBLIC_KEY"
+Guest :: struct {
+  host:            string "HOST",
+  machine:         string "MACHINE",
+  image:           string "IMAGE",
+  os:              string "OS",
+  cpus:            string "CPUS",
+  memory:          string "MEMORY",
+  pool:            string "POOL",
+  root_device:     string "ROOT_DEVICE",
+  root_size:       string "ROOT_SIZE",
+  boot:            string "BOOT",
+  bootproto:       string "BOOTPROTO",
+  network:         string "NETWORK",
+  network_device:  string "NETWORK_DEVICE",
+  ip_address:      string "IP_ADDRESS",
+  gateway_address: string "GATEWAY_ADDRESS",
+  dns_server:      string "DNS_SERVER",
+  user:            string "USER",
+  password:        string "PASSWORD",
+  ssh_public_key:  string "SSH_PUBLIC_KEY",
+  disk:            string,
+  cloud_init:      string
 }
 
 // --------------------------------------------------------------
 
-guest :: proc() -> map[string]string {
-  result := make(map[string]string)
-  for key in variables {
-    result[key] = os.get_env(allocator=context.allocator, key=key)
-  }
-  return result
+get_string_field :: proc(guest: Guest, field_name: string) -> string {
+  value := reflect.struct_field_value_by_name(guest, field_name)
+  return value.(string)
 }
+
+set_string_field :: proc(v: any, field_name: string, value: string) -> bool {
+  // field := reflect.struct_field_by_name(typeid_of(type_of(v)), field_name)
+  field := reflect.struct_field_by_name(typeid_of(Guest), field_name)
+  if field.name == "" || !reflect.is_string(field.type) {
+      return false
+  }
+  dst := (^string)(rawptr(uintptr(v.data) + field.offset))
+  dst^ = value
+  return true
+}
+
+guest :: proc() -> Guest {
+  guest: Guest
+
+  fields := reflect.struct_fields_zipped(Guest)
+  for field in fields {
+    if len(field.tag) > 0 {
+      value := os.get_env(allocator=context.allocator, key=string(field.tag))
+      set_string_field(guest, field.name, value)
+    }
+  }
+
+  return guest
+}
+
+// --------------------------------------------------------------
 
 strcat :: proc(list: ..string) -> string {
   return strings.concatenate(list)
@@ -72,15 +98,16 @@ varname :: proc(name: string) -> string {
   return strcat("${", name, "}")
 }
 
-template :: proc(text: string, vars: map[string]string) -> string {
+template :: proc(text: string, guest: Guest) -> string {
   result := text
-  for v in vars {
-    result, _ = strings.replace_all(result, varname(v), vars[v])
+  for name in reflect.struct_field_names(Guest) {
+    value := get_string_field(guest, name)
+    result, _ = strings.replace_all(result, varname(name), value)
   }
   return result
 }
 
-cloud_init_file :: proc(file: string, guest: map[string]string) -> string {
+cloud_init_file :: proc(file: string, guest: Guest) -> string {
   template_path, _ := filepath.join({base_directory, "cloud-init", file})
   text, err := os.read_entire_file(template_path, context.allocator)
   config := template(string(text), guest)
@@ -89,7 +116,7 @@ cloud_init_file :: proc(file: string, guest: map[string]string) -> string {
   return path
 }
 
-build_cloud_init :: proc(guest: map[string]string) -> string {
+build_cloud_init :: proc(guest: Guest) -> string {
   user_path := cloud_init_file("user-data", guest)
   meta_path := cloud_init_file("meta-data", guest)
   netw_path := cloud_init_file("network-config-static", guest)
@@ -103,40 +130,43 @@ upload_image :: proc(source, pool, volume: string) {
   run("echo", "virsh", "vol-upload", "--pool", pool, "--file", source, "--vol", volume)
 }
 
-build_disk :: proc(guest: map[string]string) -> string {
-  // size, ok := strconv.parse_int(guest["ROOT_SIZE"])
-  disk_name     := strcat(guest["HOST"], ".qcow2")
-  disk_path, _  := filepath.join({base_directory, "images", disk_name})
-  image_path, _ := filepath.join({base_directory, "images", guest["IMAGE"]})
-  run("echo", "truncate", "--reference", image_path, "--size", guest["ROOT_SIZE"], disk_path)
-  run("echo", "virt-resize", "--quiet", "--expand", guest["ROOT_DEVICE"], image_path, disk_path)
-  upload_image(disk_path, guest["POOL"], disk_name)
-  return strcat("device=disk,vol=", guest["POOL"], "/", disk_name)
+resize_image :: proc(image_path, volume_path, root_device, root_size: string) {
+  run("echo", "truncate", "--reference", image_path, "--size", root_size, volume_path)
+  run("echo", "virt-resize", "--quiet", "--expand", root_device, image_path, volume_path)
+}
+
+build_disk :: proc(guest: Guest) -> string {
+  volume_name    := strcat(guest.host, ".qcow2")
+  volume_path, _ := filepath.join({base_directory, "images", volume_name})
+  image_path, _  := filepath.join({base_directory, "images", guest.image})
+  resize_image(image_path, volume_path, guest.root_device, guest.root_size)
+  upload_image(volume_path, guest.pool, volume_name)
+  return strcat("device=disk,vol=", guest.pool, "/", volume_name)
 }
 
 // --------------------------------------------------------------
 
-build_vm :: proc(guest: map[string]string, disk: string, cloud_init: string) {
+build_vm :: proc(guest: Guest, disk: string, cloud_init: string) {
   args: []string = {
     "echo", "virt-install", 
     "--import", 
     "--noautoconsole",
     "--virt-type", "kvm", 
     "--graphics", "none", 
-    "--name", guest["HOST"],
-    "--osinfo", guest["OS"],
-    "--vcpu", guest["CPUS"],
-    "--memory", guest["MEMORY"],
-    "--machine", guest["MACHINE"],
-    "--boot", guest["BOOT"],
-    "--network", guest["NETWORK"],
+    "--name", guest.host,
+    "--osinfo", guest.os,
+    "--vcpu", guest.cpus,
+    "--memory", guest.memory,
+    "--machine", guest.machine,
+    "--boot", guest.boot,
+    "--network", guest.network,
     "--disk", disk,
     "--cloud-init", cloud_init
   }
   run_slice(args)
 }
 
-build_guest :: proc(guest: map[string]string) {
+build_guest :: proc(guest: Guest) {
   disk := build_disk(guest)
   cloud_init := build_cloud_init(guest)
   build_vm(guest, disk, cloud_init)
