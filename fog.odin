@@ -44,6 +44,10 @@ guest :: proc() -> map[string]string {
   return result
 }
 
+strcat :: proc(list: ..string) -> string {
+  return strings.concatenate(list)
+}
+
 run_slice :: proc(args: []string) {
   command := os.Process_Desc{command=args}
 
@@ -65,23 +69,21 @@ tempfile :: proc() -> string {
 }
 
 varname :: proc(name: string) -> string {
-  parts := []string{"${", name, "}"}
-  return strings.concatenate(parts)
+  return strcat("${", name, "}")
 }
 
 template :: proc(text: string, vars: map[string]string) -> string {
   result := text
   for v in vars {
-    pattern := varname(v)
-    result, _ = strings.replace_all(result, pattern, vars[v])
+    result, _ = strings.replace_all(result, varname(v), vars[v])
   }
   return result
 }
 
 cloud_init_file :: proc(file: string, guest: map[string]string) -> string {
   template_path, _ := filepath.join({base_directory, "cloud-init", file})
-  t, err := os.read_entire_file(template_path, context.allocator)
-  config := template(string(t), guest)
+  text, err := os.read_entire_file(template_path, context.allocator)
+  config := template(string(text), guest)
   path := tempfile()
   err = os.write_entire_file(path, config)
   return path
@@ -91,32 +93,32 @@ build_cloud_init :: proc(guest: map[string]string) -> string {
   user_path := cloud_init_file("user-data", guest)
   meta_path := cloud_init_file("meta-data", guest)
   netw_path := cloud_init_file("network-config-static", guest)
-  config: []string = {"user-data=", user_path, ",meta-data=", meta_path, ",network-config=", netw_path}
-  return strings.concatenate(config)
+  return strcat("user-data=", user_path, ",meta-data=", meta_path, ",network-config=", netw_path)
 }
 
 // --------------------------------------------------------------
 
-upload_image :: proc() {
-  // virsh vol-create-as --pool "${POOL}" --name "$2" --capacity 1m
-  // virsh vol-upload --pool "${POOL}" --vol "$2" --file "$1"
-  // virsh vol-list --pool "${POOL}"
+upload_image :: proc(source, pool, volume: string) {
+  run("echo", "virsh", "vol-create-as", "--pool", pool, "--name", volume, "--capacity", "1m")
+  run("echo", "virsh", "vol-upload", "--pool", pool, "--file", source, "--vol", volume)
 }
 
 build_disk :: proc(guest: map[string]string) -> string {
-  size, ok := strconv.parse_int(guest["ROOT_SIZE"])
+  // size, ok := strconv.parse_int(guest["ROOT_SIZE"])
+  disk_name     := strcat(guest["HOST"], ".qcow2")
+  disk_path, _  := filepath.join({base_directory, "images", disk_name})
   image_path, _ := filepath.join({base_directory, "images", guest["IMAGE"]})
-  disk_path, _  := filepath.join({base_directory, "images", guest["HOST"]})
   run("echo", "truncate", "--reference", image_path, "--size", guest["ROOT_SIZE"], disk_path)
   run("echo", "virt-resize", "--quiet", "--expand", guest["ROOT_DEVICE"], image_path, disk_path)
-  // upload "${DISK}" "${PRIMARY}"
-  return "device=disk"
+  upload_image(disk_path, guest["POOL"], disk_name)
+  return strcat("device=disk,vol=", guest["POOL"], "/", disk_name)
 }
 
 // --------------------------------------------------------------
 
 build_vm :: proc(guest: map[string]string, disk: string, cloud_init: string) {
-  args: []string = {"echo", "virt-install", 
+  args: []string = {
+    "echo", "virt-install", 
     "--import", 
     "--noautoconsole",
     "--virt-type", "kvm", 
@@ -131,7 +133,6 @@ build_vm :: proc(guest: map[string]string, disk: string, cloud_init: string) {
     "--disk", disk,
     "--cloud-init", cloud_init
   }
-	// fmt.println(args)
   run_slice(args)
 }
 
