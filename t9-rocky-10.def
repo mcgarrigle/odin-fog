@@ -1,6 +1,6 @@
 # vim: set filetype=bash :
 
-export HOST="t1"
+export HOST="t9"
 export POOL="filesystems"
 export IMAGE="rocky10.qcow2"
 export OS="rocky9"
@@ -12,7 +12,7 @@ export ROOT_SIZE="+10G"
 
 export NETWORK="network=bridge"
 export NETWORK_DEVICE="enp1s0"
-export IP_ADDRESS="192.168.10.31"
+export IP_ADDRESS="192.168.10.39"
 export GATEWAY_ADDRESS="192.168.10.1"
 export DNS_SERVER="1.1.1.1"
 

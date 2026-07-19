@@ -75,8 +75,8 @@ strcat :: proc(list: ..string) -> string {
 }
 
 run_slice :: proc(args: []string) {
+  fmt.println(args)
   command := os.Process_Desc{command=args}
-
   state, stdout, stderr, err := os.process_exec(desc=command, allocator=context.allocator)
   if err != nil {
     fmt.panicf("Failed to start command: %v", err)
@@ -126,13 +126,13 @@ build_cloud_init :: proc(guest: Guest) -> string {
 // --------------------------------------------------------------
 
 upload_image :: proc(source, pool, volume: string) {
-  run("echo", "virsh", "vol-create-as", "--pool", pool, "--name", volume, "--capacity", "1m")
-  run("echo", "virsh", "vol-upload", "--pool", pool, "--file", source, "--vol", volume)
+  run("virsh", "vol-create-as", "--pool", pool, "--name", volume, "--capacity", "1m")
+  run("virsh", "vol-upload", "--pool", pool, "--file", source, "--vol", volume)
 }
 
 resize_image :: proc(image_path, volume_path, root_device, root_size: string) {
-  run("echo", "truncate", "--reference", image_path, "--size", root_size, volume_path)
-  run("echo", "virt-resize", "--quiet", "--expand", root_device, image_path, volume_path)
+  run("truncate", "--reference", image_path, "--size", root_size, volume_path)
+  run("virt-resize", "--quiet", "--expand", root_device, image_path, volume_path)
 }
 
 build_disk :: proc(guest: Guest) -> string {
@@ -148,7 +148,7 @@ build_disk :: proc(guest: Guest) -> string {
 
 build_vm :: proc(guest: Guest, disk: string, cloud_init: string) {
   args: []string = {
-    "echo", "virt-install", 
+    "virt-install", 
     "--import", 
     "--noautoconsole",
     "--virt-type", "kvm", 
