@@ -2,7 +2,6 @@
 
 clear
 
-source ~/projects/docker-odin/setup.sh
 source t9-rocky-10.def
 
 odin build fog.odin -file 

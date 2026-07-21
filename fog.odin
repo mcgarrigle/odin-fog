@@ -40,13 +40,19 @@ Guest :: struct {
 
 // --------------------------------------------------------------
 
+get_env :: proc(key: string, default: string = "") -> string {
+  value := os.get_env(key, context.allocator)
+  if value == "" { return default }
+  return value
+}
+
 get_string_field :: proc(guest: Guest, field_name: string) -> string {
   value := reflect.struct_field_value_by_name(guest, field_name)
   return value.(string)
 }
 
 set_string_field :: proc(v: any, field_name: string, value: string) -> bool {
-  // field := reflect.struct_field_by_name(typeid_of(type_of(v)), field_name)
+  // field := reflect.struct_field_by_name(typeid_of(type_of(v)), field_name)   // this does not work but probably should
   field := reflect.struct_field_by_name(typeid_of(Guest), field_name)
   if field.name == "" || !reflect.is_string(field.type) {
       return false
@@ -62,7 +68,7 @@ guest :: proc() -> Guest {
   fields := reflect.struct_fields_zipped(Guest)
   for field in fields {
     if len(field.tag) > 0 {
-      value := os.get_env(allocator=context.allocator, key=string(field.tag))
+      value := get_env(string(field.tag))
       set_string_field(guest, field.name, value)
     }
   }
@@ -82,7 +88,7 @@ run_slice :: proc(args: []string) {
   } else {
     fmt.println(args)
     command := os.Process_Desc{command=args}
-    state, stdout, stderr, err := os.process_exec(desc=command, allocator=context.allocator)
+    state, stdout, stderr, err := os.process_exec(command, context.allocator)
     if err != nil {
       fmt.panicf("Failed to start command: %v", err)
     }
@@ -104,7 +110,7 @@ varname :: proc(name: string) -> string {
   return strcat("${", name, "}")
 }
 
-template :: proc(text: string, guest: Guest) -> string {
+render :: proc(text: string, guest: Guest) -> string {
   result := text
   for name in reflect.struct_field_names(Guest) {
     value := get_string_field(guest, name)
@@ -115,10 +121,10 @@ template :: proc(text: string, guest: Guest) -> string {
 
 cloud_init_file :: proc(file: string, guest: Guest) -> string {
   template_path, _ := filepath.join({base_directory, "cloud-init", file})
-  text, err := os.read_entire_file(template_path, context.allocator)
-  config := template(string(text), guest)
+  template, _ := os.read_entire_file(template_path, context.allocator)
+  config := render(string(template), guest)
   path := tempfile()
-  err = os.write_entire_file(path, config)
+  _ = os.write_entire_file(path, config)
   return path
 }
 
@@ -179,7 +185,7 @@ build_guest :: proc(guest: Guest) {
 }
  
 destroy_guest :: proc(guest: string) {
-  pool := "filesystems"
+  pool := get_env("POOL", "filesystems")
   volume_name := strcat(guest, ".qcow2")
   run("virsh", "destroy", guest)
   run("virsh", "undefine", "--nvram", guest)
