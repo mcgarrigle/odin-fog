@@ -5,12 +5,10 @@ import "core:os"
 import "core:path/filepath"
 import "core:math/rand"
 import "core:strings"
-import "core:strconv"
-import "core:encoding/hex"
 import "core:reflect"
 
 
-DEBUG :: true
+DEBUG :: false
 
 base_directory: string
 
@@ -85,7 +83,6 @@ strcat :: proc(list: ..string) -> string {
 run_slice :: proc(args: []string) {
   fmt.println(args)
   when !DEBUG {
-    fmt.println(args)
     command := os.Process_Desc{command=args}
     state, stdout, stderr, err := os.process_exec(command, context.allocator)
     if err != nil {
@@ -137,8 +134,8 @@ build_cloud_init :: proc(guest: Guest) -> string {
 // --------------------------------------------------------------
 
 upload_image :: proc(source, pool, volume: string) {
-  run("virsh", "vol-create-as", "--pool", pool, "--name", volume, "--capacity", "1m")
-  run("virsh", "vol-upload", "--pool", pool, "--file", source, "--vol", volume)
+  run("virsh", "vol-create-as", "--capacity", "1m", "--pool", pool, "--name", volume)
+  run("virsh", "vol-upload", "--file", source, "--pool", pool, "--vol", volume)
 }
 
 resize_image :: proc(image_path, volume_path, root_device, root_size: string) {
