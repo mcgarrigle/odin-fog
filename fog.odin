@@ -10,6 +10,8 @@ import "core:encoding/hex"
 import "core:reflect"
 
 
+DEBUG :: true
+
 base_directory: string
 
 Guest :: struct {
@@ -75,13 +77,17 @@ strcat :: proc(list: ..string) -> string {
 }
 
 run_slice :: proc(args: []string) {
-  fmt.println(args)
-  command := os.Process_Desc{command=args}
-  state, stdout, stderr, err := os.process_exec(desc=command, allocator=context.allocator)
-  if err != nil {
-    fmt.panicf("Failed to start command: %v", err)
+  when DEBUG {
+    fmt.println(args)
+  } else {
+    fmt.println(args)
+    command := os.Process_Desc{command=args}
+    state, stdout, stderr, err := os.process_exec(desc=command, allocator=context.allocator)
+    if err != nil {
+      fmt.panicf("Failed to start command: %v", err)
+    }
+    fmt.println(string(stdout))
   }
-  fmt.println(string(stdout))
 }
 
 run :: proc(args: ..string) {
@@ -172,20 +178,28 @@ build_guest :: proc(guest: Guest) {
   build_vm(guest, disk, cloud_init)
 }
  
+destroy_guest :: proc(guest: string) {
+  pool := "filesystems"
+  volume_name := strcat(guest, ".qcow2")
+  run("virsh", "destroy", guest)
+  run("virsh", "undefine", "--nvram", guest)
+  run("virsh", "vol-delete", "--pool", pool, "--vol", volume_name)
+}
+
 // -- commands --------------------------------------------------
 
-command_up :: proc(args: []string) {
+command_up :: proc() {
   build_guest(guest())
 }
 
 command_down :: proc(args: []string) {
-  fmt.println("command down")
+  destroy_guest(args[0])
 }
 
 dispatch :: proc(args: []string) {
   switch args[0] {
   case "up":
-    command_up(args[1:])
+    command_up()
   case "down":
     command_down(args[1:])
   case: 
