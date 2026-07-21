@@ -52,7 +52,7 @@ get_string_field :: proc(guest: Guest, field_name: string) -> string {
 }
 
 set_string_field :: proc(v: any, field_name: string, value: string) -> bool {
-  // field := reflect.struct_field_by_name(typeid_of(type_of(v)), field_name)   // this does not work but probably should
+  // field := reflect.struct_field_by_name(typeid_of(type_of(v)), field_name)
   field := reflect.struct_field_by_name(typeid_of(Guest), field_name)
   if field.name == "" || !reflect.is_string(field.type) {
       return false
