@@ -4,7 +4,8 @@ clear
 
 source t9-rocky-10.def
 
-odin build fog.odin -file 
+./c $1
+
 if [ $? = "0" ]; then
   ./fog up this
 fi

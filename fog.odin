@@ -8,7 +8,7 @@ import "core:strings"
 import "core:reflect"
 
 
-DEBUG :: false
+DEBUG :: #config(DEBUG, false)
 
 base_directory: string
 
@@ -40,7 +40,7 @@ Guest :: struct {
 
 get_env :: proc(key: string, default: string = "") -> string {
   value := os.get_env(key, context.allocator)
-  if value == "" { return default }
+  if value == "" do return default
   return value
 }
 
