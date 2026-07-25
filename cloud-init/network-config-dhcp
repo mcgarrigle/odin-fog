@@ -1,6 +1,6 @@
 version: 1
 config:
-- name: ${NETWORK_DEVICE}
+- name: ${network_device}
   subnets:
   - type: dhcp
   type: physical

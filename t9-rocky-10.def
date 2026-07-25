@@ -16,4 +16,6 @@ export IP_ADDRESS="192.168.10.39"
 export GATEWAY_ADDRESS="192.168.10.1"
 export DNS_SERVER="1.1.1.1"
 
+export PASSWORD="letmein123"
+
 export SSH_PUBLIC_KEY="$(cat ${HOME}/.ssh/id_rsa.pub)"
