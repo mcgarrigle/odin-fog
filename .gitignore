@@ -1,3 +1,4 @@
 fog
+*.bin
 *.img
 *.qcow2

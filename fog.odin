@@ -7,6 +7,7 @@ import "core:reflect"
 
 import "project:util"
 import "project:template"
+import "project:environment"
 
 
 DEBUG :: #config(DEBUG, false)
@@ -15,21 +16,21 @@ base_directory: string
 
 Guest :: struct {
   host:            string "HOST",
-  machine:         string "MACHINE",
+  machine:         string "MACHINE:q35",
   image:           string "IMAGE",
   os:              string "OS",
-  cpus:            string "CPUS",
+  cpus:            string "CPUS:1",
   memory:          string "MEMORY",
-  pool:            string "POOL",
+  pool:            string "POOL:filesystems",
   root_device:     string "ROOT_DEVICE",
   root_size:       string "ROOT_SIZE",
   boot:            string "BOOT",
-  bootproto:       string "BOOTPROTO",
+  bootproto:       string "BOOTPROTO:static",
   network:         string "NETWORK",
   network_device:  string "NETWORK_DEVICE",
   ip_address:      string "IP_ADDRESS",
   gateway_address: string "GATEWAY_ADDRESS",
-  dns_server:      string "DNS_SERVER",
+  dns_server:      string "DNS_SERVER:1.1.1.1",
   user:            string "USER",
   password:        string "PASSWORD",
   ssh_public_key:  string "SSH_PUBLIC_KEY",
@@ -40,6 +41,13 @@ Guest :: struct {
 // --------------------------------------------------------------
 
 guest :: proc() -> Guest {
+  guest: Guest
+
+  environment.extract(&guest)
+  return guest
+}
+
+guest2 :: proc() -> Guest {
   guest: Guest
 
   fields := reflect.struct_fields_zipped(Guest)
