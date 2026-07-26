@@ -47,20 +47,6 @@ guest :: proc() -> Guest {
   return guest
 }
 
-guest2 :: proc() -> Guest {
-  guest: Guest
-
-  fields := reflect.struct_fields_zipped(Guest)
-  for field in fields {
-    if len(field.tag) > 0 {
-      value := util.get_env(string(field.tag))
-      r := util.set_string_field(guest, field.name, value)
-    }
-  }
-
-  return guest
-}
-
 // --------------------------------------------------------------
 
 cloud_init_file :: proc(file: string, guest: Guest) -> string {
