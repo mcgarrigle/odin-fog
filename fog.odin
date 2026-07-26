@@ -5,8 +5,8 @@ import "core:os"
 import "core:path/filepath"
 import "core:reflect"
 
-import "util"
-import "template"
+import "project:util"
+import "project:template"
 
 
 DEBUG :: #config(DEBUG, false)

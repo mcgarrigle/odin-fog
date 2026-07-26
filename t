@@ -4,8 +4,9 @@ clear
 
 source t9-rocky-10.def
 
-./c $1
-
-if [ $? = "0" ]; then
+if [ "$1" = "-t" ]; then
+  odin test lib -collection:project=./lib -all-packages
+else
+  ./c $1 || exit 1
   ./fog up this
 fi
