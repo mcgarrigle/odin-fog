@@ -24,7 +24,7 @@ Guest :: struct {
   pool:            string "POOL:filesystems",
   root_device:     string "ROOT_DEVICE",
   root_size:       string "ROOT_SIZE",
-  boot:            string "BOOT",
+  boot:            string "BOOT:uefi",
   bootproto:       string "BOOTPROTO:static",
   network:         string "NETWORK",
   network_device:  string "NETWORK_DEVICE",
@@ -59,9 +59,10 @@ cloud_init_file :: proc(file: string, guest: Guest) -> string {
 }
 
 build_cloud_init :: proc(guest: Guest) -> string {
+  netw_template := util.strcat("network-config-", guest.bootproto)
   user_path := cloud_init_file("user-data", guest)
   meta_path := cloud_init_file("meta-data", guest)
-  netw_path := cloud_init_file("network-config-static", guest)
+  netw_path := cloud_init_file(netw_template, guest)
   return util.strcat("user-data=", user_path, ",meta-data=", meta_path, ",network-config=", netw_path)
 }
 
