@@ -20,7 +20,7 @@ Guest :: struct {
   image:           string "IMAGE",
   os:              string "OS",
   cpus:            string "CPUS:1",
-  memory:          string "MEMORY",
+  memory:          string "MEMORY:2048",
   pool:            string "POOL:filesystems",
   root_device:     string "ROOT_DEVICE",
   root_size:       string "ROOT_SIZE",
@@ -36,15 +36,6 @@ Guest :: struct {
   ssh_public_key:  string "SSH_PUBLIC_KEY",
   disk:            string,
   cloud_init:      string
-}
-
-// --------------------------------------------------------------
-
-guest :: proc() -> Guest {
-  guest: Guest
-
-  environment.extract(&guest)
-  return guest
 }
 
 // --------------------------------------------------------------
@@ -126,7 +117,9 @@ destroy_guest :: proc(guest: string) {
 // -- commands --------------------------------------------------
 
 command_up :: proc() {
-  build_guest(guest())
+  guest: Guest
+  environment.extract(&guest)
+  build_guest(guest)
 }
 
 command_down :: proc(args: []string) {

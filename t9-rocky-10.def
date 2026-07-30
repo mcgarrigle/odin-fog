@@ -18,4 +18,4 @@ export DNS_SERVER="1.1.1.1"
 
 export PASSWORD="letmein123"
 
-export SSH_PUBLIC_KEY="$(cat ${HOME}/.ssh/id_rsa.pub)"
+export SSH_PUBLIC_KEY="$(cat ${HOME}/.ssh/id_ed25519.pub)"
