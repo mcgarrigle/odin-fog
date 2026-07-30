@@ -26,8 +26,9 @@ strcat :: proc(list: ..string) -> string {
 // run commands
 
 run_slice :: proc(args: []string) {
-  fmt.println(args)
-  when !DEBUG {
+  when DEBUG {
+    fmt.println(args)
+  } else {
     command := os.Process_Desc{command=args}
     state, stdout, stderr, err := os.process_exec(command, context.allocator)
     if err != nil {

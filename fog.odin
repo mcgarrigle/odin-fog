@@ -106,15 +106,19 @@ build_guest :: proc(guest: Guest) {
   build_vm(guest, disk, cloud_init)
 }
  
-destroy_guest :: proc(guest: string) {
+destroy_guest :: proc(name: string) {
   pool := util.get_env("POOL", "filesystems")
-  volume_name := util.strcat(guest, ".qcow2")
-  util.run("virsh", "destroy", guest)
-  util.run("virsh", "undefine", "--nvram", guest)
+  volume_name := util.strcat(name, ".qcow2")
+  util.run("virsh", "destroy", name)
+  util.run("virsh", "undefine", "--nvram", name)
   util.run("virsh", "vol-delete", "--pool", pool, "--vol", volume_name)
 }
 
 // -- commands --------------------------------------------------
+
+command_ls :: proc() {
+  util.run("virsh", "list", "--all")
+}
 
 command_up :: proc() {
   guest: Guest
@@ -122,16 +126,32 @@ command_up :: proc() {
   build_guest(guest)
 }
 
-command_down :: proc(args: []string) {
-  destroy_guest(args[0])
+command_down :: proc(name: string) {
+  destroy_guest(name)
+}
+
+command_vols :: proc() {
+  pool := util.get_env("POOL", "filesystems")
+  util.run("virsh", "vol-list", "--pool", pool)
+}
+
+command_info :: proc(name: string) {
+  util.run("virsh", "dominfo", "--domain", name)
+  util.run("virsh", "domblklist", "--domain", name)
 }
 
 dispatch :: proc(args: []string) {
   switch args[0] {
+  case "ls":
+    command_ls()
   case "up":
     command_up()
   case "down":
-    command_down(args[1:])
+    command_down(args[1])
+  case "vols":
+    command_vols()
+  case "info":
+    command_info(args[1])
   case: 
 	  fmt.println("unknown command")
   }
