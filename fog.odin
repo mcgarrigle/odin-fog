@@ -107,11 +107,8 @@ build_guest :: proc(guest: Guest) {
 }
  
 destroy_guest :: proc(name: string) {
-  pool := util.get_env("POOL", "filesystems")
-  volume_name := util.strcat(name, ".qcow2")
-  util.run("virsh", "destroy", name)
-  util.run("virsh", "undefine", "--nvram", name)
-  util.run("virsh", "vol-delete", "--pool", pool, "--vol", volume_name)
+  util.run("virsh", "destroy", "--domain", name)
+  util.run("virsh", "undefine", "--domain", name, "--remove-all-storage", "--nvram")
 }
 
 // -- commands --------------------------------------------------
