@@ -12,7 +12,9 @@ DEBUG :: #config(DEBUG, false)
 
 get_env :: proc(key: string, default: string = "") -> string {
   value := os.get_env(key, context.allocator)
-  if value == "" do return default
+  if value == "" {
+    return strings.clone(default, context.allocator)  // clone default so delete() can be used in a consistent manner
+  }
   return value
 }
 

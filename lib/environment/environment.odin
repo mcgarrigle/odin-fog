@@ -8,6 +8,23 @@ import "core:reflect"
 import "project:util"
 
 
+// ------------------------------------------------------------------
+
+@(private)
+value :: proc(tag: string) -> string {
+  if tag == "" do return ""
+  parts := strings.split(tag, ":")
+  defer delete(parts)
+  if len(parts) == 1 {
+    return util.get_env(parts[0])
+  } else {
+    return util.get_env(parts[0], parts[1])
+  }
+}
+
+// ------------------------------------------------------------------
+// public
+
 extract :: proc(s: ^$T) {
   fields := reflect.struct_fields_zipped(T)
   for field in fields {
@@ -18,13 +35,10 @@ extract :: proc(s: ^$T) {
   }
 }
 
-@(private)
-value :: proc(tag: string) -> string {
-  if tag == "" do return ""
-  parts := strings.split(tag, ":")
-  if len(parts) == 1 {
-    return util.get_env(parts[0])
-  } else {
-    return util.get_env(parts[0], parts[1])
+environment_delete :: proc(s: $T) {
+  fields := reflect.struct_fields_zipped(T)
+  for field in fields {
+    v := util.get_string_field(s, field.name)
+    delete(v)
   }
 }
