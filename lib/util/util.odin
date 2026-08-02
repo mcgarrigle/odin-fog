@@ -46,8 +46,10 @@ run :: proc(args: ..string) {
 
 // --------------------------------------------------------------
 
-tempfile :: proc() -> string {
-  return fmt.aprintf("/tmp/fog.%x", rand.uint64())
+tempfile :: proc(prefix: string = "tmp") -> string {
+  temp, _ := os.temp_directory(context.allocator)
+  defer delete(temp)
+  return fmt.aprintf("%s/%s.%x", temp, prefix, rand.uint64())
 }
 
 // --------------------------------------------------------------
