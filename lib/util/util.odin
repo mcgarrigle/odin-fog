@@ -27,6 +27,18 @@ strcat :: proc(list: ..string) -> string {
 // --------------------------------------------------------------
 // run commands
 
+run_capture :: proc(args: []string) -> (result : string, err: bool) #optional_ok {
+  command := os.Process_Desc{command=args}
+  state, stdout, stderr, _ := os.process_exec(command, context.allocator)
+  defer delete(stdout)
+  defer delete(stderr)
+  if state.exit_code == 0 {
+    return string(stdout), false
+  } else {
+    return string(stderr), true
+  }
+}
+
 run_slice :: proc(args: []string) {
   when DEBUG {
     fmt.println(args)
