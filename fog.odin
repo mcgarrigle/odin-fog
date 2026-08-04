@@ -113,6 +113,11 @@ destroy_guest :: proc(name: string) {
 
 // -- commands --------------------------------------------------
 
+error :: proc(m: string) {
+  fmt.println(m)
+  os.exit(1)
+}
+
 command_ls :: proc() {
   util.run("virsh", "list", "--all")
 }
@@ -137,6 +142,19 @@ command_info :: proc(name: string) {
   util.run("virsh", "domblklist", "--domain", name)
 }
 
+domain :: proc(args: []string) -> string {
+  switch len(args) {
+  case 1:
+    error("missing parameter: domain name required")
+    return "err"
+  case 2:
+    return args[1]
+  case:
+    error("extra parameter: domain name required")
+    return "err"
+  }
+}
+
 dispatch :: proc(args: []string) {
   switch args[0] {
   case "ls":
@@ -144,11 +162,11 @@ dispatch :: proc(args: []string) {
   case "up":
     command_up()
   case "down":
-    command_down(args[1])
+    command_down(domain(args))
   case "vols":
     command_vols()
   case "info":
-    command_info(args[1])
+    command_info(domain(args))
   case: 
 	  fmt.println("unknown command")
   }
