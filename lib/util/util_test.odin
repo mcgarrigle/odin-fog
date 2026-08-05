@@ -45,6 +45,7 @@ test_get_env_unset_assignment :: proc(t: ^testing.T) {
 @(test)
 test_run_capture_success :: proc(t: ^testing.T) {
   out, err := util.run_capture({"ls", "-l"})
+  defer delete(out)
   // log.info(err, out)
   testing.expect_value(t, err, false)
 }
@@ -52,6 +53,7 @@ test_run_capture_success :: proc(t: ^testing.T) {
 @(test)
 test_run_capture_failure :: proc(t: ^testing.T) {
   out, err := util.run_capture({"ls", "--ERR"})
+  defer delete(out)
   // log.info(err, out)
   testing.expect_value(t, err, true)
 }

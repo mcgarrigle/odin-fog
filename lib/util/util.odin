@@ -30,8 +30,6 @@ strcat :: proc(list: ..string) -> string {
 run_capture :: proc(args: []string) -> (result : string, err: bool) #optional_ok {
   command := os.Process_Desc{command=args}
   state, stdout, stderr, _ := os.process_exec(command, context.allocator)
-  defer delete(stdout)
-  defer delete(stderr)
   if state.exit_code == 0 {
     return string(stdout), false
   } else {
@@ -43,12 +41,9 @@ run_slice :: proc(args: []string) {
   when DEBUG {
     fmt.println(args)
   } else {
-    command := os.Process_Desc{command=args}
-    state, stdout, stderr, err := os.process_exec(command, context.allocator)
-    if err != nil {
-      fmt.panicf("Failed to start command: %v", err)
-    }
-    fmt.println(string(stdout))
+    out, err := run_capture(args)
+    fmt.println(string(out))
+    if err do os.exit(1)
   }
 }
 
