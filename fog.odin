@@ -84,6 +84,7 @@ build_vm :: proc(guest: Guest, disk: string, cloud_init: string) {
   args: []string = {
     "virt-install", 
     "--import", 
+    "--autorestart",
     "--noautoconsole",
     "--virt-type", "kvm", 
     "--graphics", "none", 

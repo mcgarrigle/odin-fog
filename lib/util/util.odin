@@ -42,7 +42,7 @@ run_slice :: proc(args: []string) {
     fmt.println(args)
   } else {
     out, err := run_capture(args)
-    fmt.println(string(out))
+    fmt.println(out)
     if err do os.exit(1)
   }
 }
