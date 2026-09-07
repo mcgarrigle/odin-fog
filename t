@@ -10,6 +10,6 @@ if [ "$1" = "-t" ]; then
     -define:ODIN_TEST_THREADS=1 \
     -define:ODIN_TEST_RANDOM_SEED=1971089818485440 
 else
-  ./c $1 || exit 1
+  ./build $1 || exit 1
   ./fog up this
 fi

@@ -3,6 +3,8 @@ package main
 import "core:fmt"
 import "core:os"
 import "core:path/filepath"
+import "core:strings"
+import "core:slice"
 import "core:reflect"
 
 import "project:util"
@@ -13,6 +15,10 @@ import "project:environment"
 DEBUG :: #config(DEBUG, false)
 
 base_directory: string
+
+cluster: Cluster
+
+// --------------------------------------------------------------
 
 Guest :: struct {
   host:            string "HOST",
@@ -114,12 +120,18 @@ destroy_guest :: proc(name: string) {
 
 // -- commands --------------------------------------------------
 
+shift :: proc(array: $T/[]$E) -> (E, []E) {
+  x := array[0]
+  slice.rotate_left(array, 1)
+  return x, array[0:len(array)-1]
+}
+
 error :: proc(m: string) {
   fmt.println(m)
   os.exit(1)
 }
 
-command_ls :: proc() {
+Xcommand_ls :: proc() {
   util.run("virsh", "list", "--all")
 }
 
@@ -138,7 +150,7 @@ command_vols :: proc() {
   util.run("virsh", "vol-list", "--pool", pool)
 }
 
-command_info :: proc(name: string) {
+Xcommand_info :: proc(name: string) {
   util.run("virsh", "dominfo", "--domain", name)
   util.run("virsh", "domblklist", "--domain", name)
 }
@@ -157,17 +169,19 @@ domain :: proc(args: []string) -> string {
 }
 
 dispatch :: proc(args: []string) {
-  switch args[0] {
-  case "ls":
+  command, rest := shift(args)
+	// fmt.println("command", command, rest)
+  switch command {
+  case "ls", "list":
     command_ls()
+  case "info":
+    command_info(rest)
+  case "vols":
+    command_vols()
   case "up":
     command_up()
   case "down":
     command_down(domain(args))
-  case "vols":
-    command_vols()
-  case "info":
-    command_info(domain(args))
   case: 
 	  fmt.println("unknown command")
   }
@@ -177,5 +191,7 @@ dispatch :: proc(args: []string) {
 
 main :: proc() {
   base_directory, _ = os.get_executable_directory(context.allocator)
+  names := strings.split(util.get_env("FOG_CLUSTER", "local"), " ")
+  cluster = cluster_init(names)
   dispatch(os.args[1:])
 }
