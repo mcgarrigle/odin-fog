@@ -1,13 +1,7 @@
 package main
 
 import "core:fmt"
-import "core:os"
-import "core:io"
-import "core:strings"
-import "core:strconv"
-import "core:sort"
 import "core:text/table"
-import "core:path/filepath"
 
 import vir "project:libvirt"
 
@@ -15,6 +9,7 @@ import vir "project:libvirt"
 
 create_domain_table :: proc(domain: vir.DomainDetails) -> ^table.Table {
   tbl := table.init(new(table.Table), context.allocator)
+  table.caption(tbl,"Domain")
   table.row(tbl, "ID:", format_id(domain.id))
   table.row(tbl, "Name:", domain.name)
   table.row(tbl, "State:", domain.state)
@@ -28,6 +23,7 @@ create_domain_table :: proc(domain: vir.DomainDetails) -> ^table.Table {
 
 create_domain_vol_table :: proc(vols: []vir.DomainDiskInfo) -> ^table.Table {
   tbl := table.init(new(table.Table), context.allocator)
+  table.caption(tbl,"Volumes")
   table.header(tbl, "target", "source")
   for vol in vols {
     table.row(tbl, vol.target, vol.source)

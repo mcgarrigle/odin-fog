@@ -11,12 +11,6 @@ import "project:template"
 import "project:environment"
 
 
-DEBUG :: #config(DEBUG, false)
-
-base_directory: string
-
-cluster: Cluster
-
 // --------------------------------------------------------------
 
 Guest :: struct {
@@ -112,70 +106,8 @@ build_guest :: proc(guest: Guest) {
   build_vm(guest, disk, cloud_init)
 }
  
-destroy_guest :: proc(name: string) {
-  util.run("virsh", "destroy", "--domain", name)
-  util.run("virsh", "undefine", "--domain", name, "--remove-all-storage", "--nvram")
-}
-
-// -- commands --------------------------------------------------
-
-shift :: proc(array: $T/[]$E) -> (E, []E) {
-  x := array[0]
-  slice.rotate_left(array, 1)
-  return x, array[0:len(array)-1]
-}
-
-error :: proc(m: string) {
-  fmt.println(m)
-  os.exit(1)
-}
-
-command_up :: proc() {
+command_build :: proc() {
   guest: Guest
   environment.extract(&guest)
   build_guest(guest)
-}
-
-command_down :: proc(name: string) {
-  destroy_guest(name)
-}
-
-domain :: proc(args: []string) -> string {
-  switch len(args) {
-  case 1:
-    error("missing parameter: domain name required")
-    return "err"
-  case 2:
-    return args[1]
-  case:
-    error("extra parameter: domain name required")
-    return "err"
-  }
-}
-
-dispatch :: proc(args: []string) {
-  command, rest := shift(args)
-  switch command {
-  case "list", "ls":
-    command_list()
-  case "info":
-    command_info(rest)
-  case "vols":
-    command_vols()
-  case "up":
-    command_up()
-  case "down":
-    command_down(domain(args))
-  case: 
-    fmt.println("unknown command")
-  }
-}
-
-// -- main ------------------------------------------------------
-
-main :: proc() {
-  base_directory, _ = os.get_executable_directory(context.allocator)
-  names := strings.split(util.get_env("FOG_CLUSTER", "local"), " ")
-  cluster = cluster_init(names)
-  dispatch(os.args[1:])
 }
