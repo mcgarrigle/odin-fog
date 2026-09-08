@@ -1,15 +1,11 @@
 package main
 
-import "core:fmt"
 import "core:os"
 import "core:path/filepath"
-import "core:strings"
-import "core:slice"
 
 import "project:util"
 import "project:template"
 import "project:environment"
-
 
 // --------------------------------------------------------------
 
