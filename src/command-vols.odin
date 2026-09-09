@@ -17,9 +17,9 @@ create_vol_list_table :: proc(vols: []vir.StorageVolDetails) -> ^table.Table {
 
   tbl := table.init(new(table.Table), context.allocator)
   table.caption(tbl,"Volumes")
-  table.header(tbl, "Host", "Pool", "Key", "Allocation")
+  table.header(tbl, "Host", "Pool", "Key", "Capacity", "Allocation")
   for vol in vols {
-    table.row(tbl, vol.host, vol.pool, vol.key, format_bytes(vol.allocation))
+    table.row(tbl, vol.host, vol.pool, vol.key, format_bytes(vol.capacity), format_bytes(vol.allocation))
   }
   return tbl
 }
