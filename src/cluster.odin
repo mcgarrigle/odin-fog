@@ -1,5 +1,7 @@
 package main
 
+import "core:sort"
+
 import vir "project:libvirt"
 
 // --------------------------------------------------------------
@@ -11,7 +13,10 @@ ClusterNode :: struct {
 
 Cluster :: []ClusterNode
 
+// --------------------------------------------------------------
+
 cluster_init :: proc(names: []string) -> Cluster {
+  sort.heap_sort_proc(names, sort.compare_strings)
   cluster := make(Cluster, len(names))
   for name, i in names {
     cluster[i].name = name

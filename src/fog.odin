@@ -61,6 +61,8 @@ dispatch :: proc(args: []string) {
     command_list()
   case "info":
     command_info(rest)
+  case "pools":
+    command_pools()
   case "vols":
     command_vols()
   case "build":

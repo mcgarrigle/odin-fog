@@ -17,9 +17,9 @@ create_domain_list_table :: proc(domains: []vir.DomainDetails) -> ^table.Table {
 
   tbl := table.init(new(table.Table), context.allocator)
   table.caption(tbl,"Domains")
-  table.header(tbl, "ID", "Name", "State", "Host")
+  table.header(tbl, "Host", "Name", "State", "ID")
   for domain in domains {
-    table.row(tbl, format_id(domain.id), domain.name, domain.state, domain.host)
+    table.row(tbl, domain.host, domain.name, domain.state, format_id(domain.id))
   }
   return tbl
 }
