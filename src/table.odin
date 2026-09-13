@@ -1,9 +1,11 @@
 package main
 
 import "core:fmt"
+import "core:os"
 import "core:io"
 import "core:strings"
 import "core:strconv"
+import "core:terminal"
 import "core:text/table"
 
 Format :: enum {
@@ -55,6 +57,7 @@ write_stream_table :: proc(w: io.Writer, tbl: ^table.Table, width_proc: table.Wi
 }
 
 render_table :: proc(tbl: ^table.Table, format: Format = .Lines) {
+  format := format if terminal.is_terminal(os.stdout) else Format.None
   table.padding(tbl, 1, 1)
   stdout := table.stdio_writer()
   switch format {
