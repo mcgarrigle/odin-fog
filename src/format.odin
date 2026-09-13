@@ -2,6 +2,7 @@ package main
 
 import "core:fmt"
 import "core:strconv"
+import "core:strings"
 
 
 format_enabled :: proc(state: i32) -> string {
@@ -24,8 +25,7 @@ format_bytes :: proc(bytes: u64) -> string {
 }
 
 format_id :: proc(id: i32) -> string {
+  if id == -1 do return strings.clone("-")
   buf := make([]byte, 10)
-  buf[0] = '-'
-  if id == -1 do return string(buf)
   return strconv.write_int(buf[:], i64(id), 10)
 }
