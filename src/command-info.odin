@@ -33,13 +33,7 @@ create_domain_vol_table :: proc(vols: []vir.DomainDiskInfo) -> ^table.Table {
 
 // --------------------------------------------------------------
 
-command_info :: proc(args: []string) {
-  if len(args) == 0 do error("domain name required")
-
-  domain, ok := cluster_find_domain(cluster_list(cluster), args[0])
-
-  if !ok do error("domain not found")
-
+command_info :: proc(domain: vir.DomainDetails) {
   dtab := create_domain_table(domain)
 
   vols := vir.DomainGetDiskInfo(domain.domain)
