@@ -10,19 +10,14 @@ import "project:util"
 import "project:template"
 import "project:environment"
 
+import vir "project:libvirt"
+
 
 DEBUG :: #config(DEBUG, false)
 
 base_directory: string
 
 cluster: Cluster
-
-// --------------------------------------------------------------
-
-destroy_guest :: proc(name: string) {
-  util.run("virsh", "destroy", "--domain", name)
-  util.run("virsh", "undefine", "--domain", name, "--remove-all-storage", "--nvram")
-}
 
 // -- commands --------------------------------------------------
 
@@ -37,20 +32,21 @@ error :: proc(m: string) {
   os.exit(1)
 }
 
-command_down :: proc(name: string) {
-  destroy_guest(name)
+exit_domain :: proc(m: string) -> vir.DomainDetails {
+  error(m)
+  return vir.DomainDetails{}
 }
 
-domain :: proc(args: []string) -> string {
+domain :: proc(args: []string) -> vir.DomainDetails {
   switch len(args) {
+  case 0:
+    return exit_domain("missing parameter: domain name required")
   case 1:
-    error("missing parameter: domain name required")
-    return "err"
-  case 2:
-    return args[1]
+    dom, ok := cluster_find_domain(cluster_list(cluster), args[0])
+    if ok do return dom
+    return exit_domain(fmt.aprintf("domain '%s' not found", args[0]))
   case:
-    error("extra parameter: domain name required")
-    return "err"
+    return exit_domain("single domain name required")
   }
 }
 
@@ -60,7 +56,7 @@ dispatch :: proc(args: []string) {
   case "list", "ls":
     command_list()
   case "info":
-    command_info(rest)
+    command_info(domain(rest))
   case "pools":
     command_pools()
   case "vols":
@@ -68,9 +64,9 @@ dispatch :: proc(args: []string) {
   case "build":
     command_build()
   case "down":
-    command_down(domain(args))
+    command_down(domain(rest))
   case: 
-    fmt.println("unknown command")
+    error("unknown command")
   }
 }
 
