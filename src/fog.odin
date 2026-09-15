@@ -59,11 +59,11 @@ dispatch :: proc(args: []string) {
     command_info(domain(rest))
   case "pools":
     command_pools()
-  case "vols":
-    command_vols()
+  case "volumes", "vols":
+    command_volumes()
   case "build":
     command_build()
-  case "down":
+  case "down", "delete", "rm":
     command_down(domain(rest))
   case: 
     error("unknown command")

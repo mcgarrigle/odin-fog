@@ -26,7 +26,7 @@ create_vol_list_table :: proc(vols: []vir.StorageVolDetails) -> ^table.Table {
 
 // --------------------------------------------------------------
 
-command_vols :: proc() {
+command_volumes :: proc() {
   list: [dynamic]vir.StorageVolDetails
 
   for node in cluster {
