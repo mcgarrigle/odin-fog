@@ -1,25 +1,22 @@
 package main
 
-import "core:fmt"
-import "core:os"
-import "core:path/filepath"
-import "core:strings"
-import "core:slice"
-
 import vir "project:libvirt"
-
 
 // --------------------------------------------------------------
 
-destroy_guest :: proc(name: string) {
-  // util.run("virsh", "destroy", "--domain", name)
-  // util.run("virsh", "undefine", "--domain", name, "--remove-all-storage", "--nvram")
+destroy_disk :: proc(conn: ^vir.Connect, path: string) {
+  vol := vir.StorageVolLookupByPath(conn, path)
+  _ = vir.StorageVolDelete(vol)
 }
 
 // -- commands --------------------------------------------------
 
 command_down :: proc(domain: vir.DomainDetails) {
-  // destroy_guest(name)
-  vols := vir.DomainGetDiskInfo(domain.domain)
-  fmt.println(vols)
+  conn := vir.DomainGetConnect(domain.domain)
+  vir.DomainDestroy(domain.domain)
+  _ = vir.DomainUndefineFlags(domain.domain, .UndefineNVRAM)
+  disks := vir.DomainGetDiskInfo(domain.domain)
+  for disk in disks {
+    if disk.device == "disk" do destroy_disk(conn, disk.source)
+  }
 }
