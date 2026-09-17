@@ -65,6 +65,10 @@ dispatch :: proc(args: []string) {
     command_build()
   case "down", "delete", "rm":
     command_down(domain(rest))
+  case "start":
+    command_start(domain(rest))
+  case "stop":
+    command_stop(domain(rest))
   case: 
     error("unknown command")
   }
