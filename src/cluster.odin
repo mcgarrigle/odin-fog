@@ -3,6 +3,15 @@ package main
 import "core:sort"
 import "core:fmt"
 import "core:log"
+import "core:c"
+
+
+foreign import libc "system:libc.so"
+
+foreign libc {
+  puts :: proc(s: cstring) -> c.int ---
+}
+
 
 import vir "project:libvirt"
 
@@ -18,8 +27,7 @@ Cluster :: []ClusterNode
 // --------------------------------------------------------------
 
 error_handler :: proc "cdecl" (data: rawptr, err: ^vir.Error) {
-  // fmt.println("err")
-  // log.error("err")
+  // puts(err.message)
 }
 
 cluster_init :: proc(names: []string) -> Cluster {
