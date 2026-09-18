@@ -23,7 +23,7 @@ create_domain_table :: proc(domain: vir.DomainDetails) -> ^table.Table {
 
 // --------------------------------------------------------------
 
-get_volume_info :: proc(conn: ^vir.Connect, path: string) -> (capacity: string, allocation: string) {
+get_volume_details :: proc(conn: ^vir.Connect, path: string) -> (capacity: string, allocation: string) {
   v := vir.StorageVolLookupByPath(conn, path)
   if v == nil do return "-", "-"
   d := vir.vol_get_details(v)
@@ -35,7 +35,7 @@ create_domain_vol_table :: proc(conn: ^vir.Connect, vols: []vir.DomainDiskInfo) 
   table.caption(tbl,"Volumes")
   table.header(tbl, "Target", "Source", "Capacity", "Allocation")
   for vol in vols {
-    capacity, allocation := get_volume_info(conn, vol.source)
+    capacity, allocation := get_volume_details(conn, vol.source)
     table.row(tbl, vol.target, vol.source, capacity, allocation)
   }
   return tbl
@@ -44,9 +44,9 @@ create_domain_vol_table :: proc(conn: ^vir.Connect, vols: []vir.DomainDiskInfo) 
 // --------------------------------------------------------------
 
 command_info :: proc(domain: vir.DomainDetails) {
-  conn := vir.DomainGetConnect(domain.domain)
   dtab := create_domain_table(domain)
 
+  conn := vir.DomainGetConnect(domain.domain)
   vols := vir.DomainGetDiskInfo(domain.domain)
   vtab := create_domain_vol_table(conn, vols)
 
