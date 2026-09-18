@@ -21,6 +21,6 @@ destroy_domain :: proc(domain: ^vir.Domain) {
 
 // -- commands --------------------------------------------------
 
-command_down :: proc(domain: vir.DomainDetails) {
+command_delete :: proc(domain: vir.DomainDetails) {
   destroy_domain(domain.domain)
 }

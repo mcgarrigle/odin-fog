@@ -50,7 +50,26 @@ domain :: proc(args: []string) -> vir.DomainDetails {
   }
 }
 
+usage :: proc() {
+  error ("""
+    Usage:
+
+    fog
+      list (ls)
+      info
+      pools
+      volumes (vols)
+      build
+      delete (rm)
+      start
+      stop
+    """)
+}
+
 dispatch :: proc(args: []string) {
+  if len(args) == 0 do usage()
+  init()
+
   command, rest := shift(args)
   switch command {
   case "list", "ls":
@@ -63,8 +82,8 @@ dispatch :: proc(args: []string) {
     command_volumes()
   case "build":
     command_build()
-  case "down", "delete", "rm":
-    command_down(domain(rest))
+  case "delete", "rm":
+    command_delete(domain(rest))
   case "start":
     command_start(domain(rest))
   case "stop":
@@ -76,9 +95,12 @@ dispatch :: proc(args: []string) {
 
 // -- main ------------------------------------------------------
 
-main :: proc() {
+init :: proc() {
   base_directory, _ = os.get_executable_directory(context.allocator)
   names := strings.split(util.get_env("FOG_CLUSTER", "local"), " ")
   cluster = cluster_init(names)
+}
+
+main :: proc() {
   dispatch(os.args[1:])
 }
