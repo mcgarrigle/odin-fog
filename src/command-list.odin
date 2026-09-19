@@ -1,6 +1,5 @@
 package main
 
-import "core:fmt"
 import "core:sort"
 import "core:text/table"
 

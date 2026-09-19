@@ -2,7 +2,6 @@ package main
 
 import "core:fmt"
 import "core:os"
-import "core:path/filepath"
 import "core:strings"
 import "core:slice"
 
@@ -19,7 +18,7 @@ base_directory: string
 
 cluster: Cluster
 
-// -- commands --------------------------------------------------
+// --------------------------------------------------------------
 
 shift :: proc(array: $T/[]$E) -> (E, []E) {
   x := array[0]
@@ -40,7 +39,7 @@ exit_domain :: proc(m: string) -> vir.DomainDetails {
 domain :: proc(args: []string) -> vir.DomainDetails {
   switch len(args) {
   case 0:
-    return exit_domain("missing parameter: domain name required")
+    return exit_domain("domain name required")
   case 1:
     dom, ok := cluster_find_domain(cluster_list(cluster), args[0])
     if ok do return dom
@@ -64,6 +63,12 @@ usage :: proc() {
       start
       stop
     """)
+}
+
+init :: proc() {
+  base_directory, _ = os.get_executable_directory(context.allocator)
+  names := strings.split(util.get_env("FOG_CLUSTER", "local"), " ")
+  cluster = cluster_init(names)
 }
 
 dispatch :: proc(args: []string) {
@@ -94,12 +99,6 @@ dispatch :: proc(args: []string) {
 }
 
 // -- main ------------------------------------------------------
-
-init :: proc() {
-  base_directory, _ = os.get_executable_directory(context.allocator)
-  names := strings.split(util.get_env("FOG_CLUSTER", "local"), " ")
-  cluster = cluster_init(names)
-}
 
 main :: proc() {
   dispatch(os.args[1:])
