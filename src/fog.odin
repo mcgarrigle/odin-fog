@@ -54,6 +54,7 @@ usage :: proc() {
     Usage:
 
     fog
+      cluster
       list (ls)
       info
       pools
@@ -77,6 +78,8 @@ dispatch :: proc(args: []string) {
 
   command, rest := shift(args)
   switch command {
+  case "cluster":
+    command_cluster()
   case "list", "ls":
     command_list()
   case "info":
