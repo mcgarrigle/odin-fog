@@ -1,0 +1,6 @@
+vi gen.sh  # edit domain and CN
+./gen.sh
+
+tar cvf pki.tar install.sh *.pem
+
+scp pki.tar dwt:
