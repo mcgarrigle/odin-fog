@@ -2,5 +2,6 @@ fog
 *.bin
 *.img
 *.qcow2
+*.pem
 lib/libvirt
 lib/xmlpath
