@@ -1,11 +1,18 @@
 package main
 
-import "core:fmt"
-import "core:strings"
 import "core:sort"
 import "core:text/table"
 
 import vir "project:libvirt"
+
+// --------------------------------------------------------------
+
+array2string :: proc (s: []u8) -> string {
+  for i in 0..<len(s) {
+    if s[i] == 0 do return string(s[:i])
+  }
+  return ""
+}
 
 // --------------------------------------------------------------
 
@@ -19,8 +26,9 @@ command_cluster :: proc() {
 
     vir.NodeGetInfo(node.conn, &info)
     uri   := vir.ConnectGetURI(node.conn)
-    model := string(info.model[:])
-    table.row(tab, node.name, uri, model, format_bytes(info.memory * 1024), info.cpus, info.sockets, info.cores, info.threads)
+    model := array2string(info.model[:])
+    mem   := format_bytes(info.memory * 1024)
+    table.row(tab, node.name, uri, model, mem, info.cpus, info.sockets, info.cores, info.threads)
   }
   render_table(tab, .Lines)
 }
