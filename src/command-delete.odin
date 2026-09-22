@@ -12,11 +12,11 @@ destroy_disk :: proc(conn: ^vir.Connect, path: string) {
 destroy_domain :: proc(domain: ^vir.Domain) {
   conn := vir.DomainGetConnect(domain)
   vir.DomainDestroy(domain)
-  vir.DomainUndefineFlags(domain, .UndefineNVRAM)
   disks := vir.DomainGetDiskInfo(domain)
   for disk in disks {
     if disk.device == "disk" do destroy_disk(conn, disk.source)
   }
+  vir.DomainUndefineFlags(domain, .UndefineNVRAM)
 }
 
 // -- commands --------------------------------------------------

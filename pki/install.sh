@@ -30,5 +30,6 @@ function cmd_help {
   echo "install.sh [server | user | help]"
 }
 
-HOSTNAME=$(hostname -s)
+HOSTNAME=$(hostname --short)
+
 cmd_${1-help}

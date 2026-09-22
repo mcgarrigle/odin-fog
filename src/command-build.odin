@@ -75,7 +75,7 @@ build_disk :: proc(guest: Guest) -> string {
 
 // --------------------------------------------------------------
 
-build_vm :: proc(guest: Guest, disk: string, cloud_init: string) {
+build_vm :: proc(guest: Guest) {
   args: []string = {
     "virt-install", 
     "--import", 
@@ -90,16 +90,17 @@ build_vm :: proc(guest: Guest, disk: string, cloud_init: string) {
     "--machine", guest.machine,
     "--boot", guest.boot,
     "--network", guest.network,
-    "--disk", disk,
-    "--cloud-init", cloud_init
+    "--disk", guest.disk,
+    "--cloud-init", guest.cloud_init
   }
   util.run_slice(args)
 }
 
 build_guest :: proc(guest: Guest) {
-  disk := build_disk(guest)
-  cloud_init := build_cloud_init(guest)
-  build_vm(guest, disk, cloud_init)
+  guest           := guest
+  guest.disk       = build_disk(guest)
+  guest.cloud_init = build_cloud_init(guest)
+  build_vm(guest)
 }
  
 command_build :: proc() {
