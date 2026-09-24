@@ -45,8 +45,7 @@ create_domain_vol_table :: proc(conn: ^vir.Connect, vols: []vir.DomainDiskInfo, 
 
 command_info :: proc(domain: vir.DomainDetails) {
 
-  format := table_format(.Decorated)
-  units := (format != .Stream)
+  format, units := table_format(.Decorated)
 
   conn := vir.DomainGetConnect(domain.domain)
   vols := vir.DomainGetDiskInfo(domain.domain)

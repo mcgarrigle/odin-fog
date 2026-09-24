@@ -29,8 +29,7 @@ create_pool_list_table :: proc(pools: []vir.StoragePoolDetails, units: bool) -> 
 command_pools :: proc() {
   list: [dynamic]vir.StoragePoolDetails
 
-  format := table_format(.Decorated)
-  units := (format != .Stream)
+  format, units := table_format(.Decorated)
 
   for node in cluster {
     pools := vir.pool_list(node.conn, node.name)

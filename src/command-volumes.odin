@@ -29,8 +29,7 @@ create_vol_list_table :: proc(vols: []vir.StorageVolDetails, units: bool) -> ^ta
 command_volumes :: proc() {
   list: [dynamic]vir.StorageVolDetails
 
-  format := table_format(.Decorated)
-  units := (format != .Stream)
+  format, units := table_format(.Decorated)
 
   for node in cluster {
     pools := vir.pool_list(node.conn, node.name)

@@ -17,8 +17,7 @@ array2string :: proc (s: []u8) -> string {
 // --------------------------------------------------------------
 
 command_cluster :: proc() {
-  format := table_format(.Decorated)
-  units := (format != .Stream)
+  format, units := table_format(.Decorated)
 
   tab := table.init(new(table.Table), context.allocator)
   table.caption(tab, "Nodes")

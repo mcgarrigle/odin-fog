@@ -56,8 +56,10 @@ write_stream_table :: proc(w: io.Writer, tbl: ^table.Table, width_proc: table.Wi
   }
 }
 
-table_format :: proc(format: Format) -> Format {
-  return format if terminal.is_terminal(os.stdout) else Format.Stream
+table_format :: proc(format: Format) -> (Format, bool) {
+  format := format if terminal.is_terminal(os.stdout) else Format.Stream
+  units  := format != Format.Stream
+  return format, units
 }
 
 render_table :: proc(tbl: ^table.Table, format: Format = .Decorated) {
