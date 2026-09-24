@@ -10,7 +10,11 @@ format_enabled :: proc(state: i32) -> string {
   return "enabled"
 }
 
-format_bytes :: proc(bytes: u64) -> string {
+format_bytes :: proc(bytes: u64, units: bool=true) -> string {
+  return format_byte_units(bytes) if units else fmt.aprintf("%d", bytes)
+}
+
+format_byte_units :: proc(bytes: u64) -> string {
   units := []string{ "B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", }
 
   value := f64(bytes)

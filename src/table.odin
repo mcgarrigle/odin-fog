@@ -9,10 +9,10 @@ import "core:terminal"
 import "core:text/table"
 
 Format :: enum {
-  ASCII,
-  Lines,
+  Plain,
+  Decorated,
   Simple,
-  None
+  Stream
 }
 
 decorations :: table.Decorations {
@@ -56,18 +56,21 @@ write_stream_table :: proc(w: io.Writer, tbl: ^table.Table, width_proc: table.Wi
   }
 }
 
-render_table :: proc(tbl: ^table.Table, format: Format = .Lines) {
-  format := format if terminal.is_terminal(os.stdout) else Format.None
+table_format :: proc(format: Format) -> Format {
+  return format if terminal.is_terminal(os.stdout) else Format.Stream
+}
+
+render_table :: proc(tbl: ^table.Table, format: Format = .Decorated) {
   table.padding(tbl, 1, 1)
   stdout := table.stdio_writer()
   switch format {
-  case .ASCII: 
+  case .Plain: 
     table.write_plain_table(stdout, tbl)
-  case .Lines:
+  case .Decorated:
     table.write_decorated_table(stdout, tbl, decorations)
   case .Simple:
     write_simple_table(stdout, tbl)
-  case .None:
+  case .Stream:
     table.padding(tbl, 0, 0)
     write_stream_table(stdout, tbl)
   }

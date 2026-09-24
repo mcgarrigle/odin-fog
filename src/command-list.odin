@@ -27,6 +27,7 @@ create_domain_list_table :: proc(domains: []vir.DomainDetails) -> ^table.Table {
 
 command_list :: proc() {
   domains := cluster_list(cluster)
+  format := table_format(.Decorated)
   tab := create_domain_list_table(domains)
-  render_table(tab, .Lines)
+  render_table(tab, format)
 }

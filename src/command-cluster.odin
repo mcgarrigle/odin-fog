@@ -17,8 +17,11 @@ array2string :: proc (s: []u8) -> string {
 // --------------------------------------------------------------
 
 command_cluster :: proc() {
+  format := table_format(.Decorated)
+  units := (format != .Stream)
+
   tab := table.init(new(table.Table), context.allocator)
-  table.caption(tab,"Nodes")
+  table.caption(tab, "Nodes")
   table.header(tab, "Name", "URI", "Model", "Memory", "CPUs", "Sockets", "Cores", "Threads")
 
   for node in cluster {
@@ -27,8 +30,8 @@ command_cluster :: proc() {
     vir.NodeGetInfo(node.conn, &info)
     uri   := vir.ConnectGetURI(node.conn)
     model := array2string(info.model[:])
-    mem   := format_bytes(info.memory * 1024)
+    mem   := format_bytes(info.memory * 1024, units)
     table.row(tab, node.name, uri, model, mem, info.cpus, info.sockets, info.cores, info.threads)
   }
-  render_table(tab, .Lines)
+  render_table(tab, format)
 }
