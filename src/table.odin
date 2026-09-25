@@ -47,10 +47,12 @@ write_simple_table :: proc(w: io.Writer, tbl: ^table.Table, width_proc: table.Wi
 write_stream_table :: proc(w: io.Writer, tbl: ^table.Table, width_proc: table.Width_Proc = table.unicode_width_proc) {
   table.build(tbl, width_proc)
   for row in 0..<tbl.nr_rows {
-    for col in 0..<tbl.nr_cols {
-      cell := table.get_cell(tbl, row, col)
-      io.write_string(w, cell.text)
+    cell := table.get_cell(tbl, row, 0)
+    io.write_string(w, cell.text)
+    for col in 1..<tbl.nr_cols {
       io.write_byte(w, '\t')
+      cell = table.get_cell(tbl, row, col)
+      io.write_string(w, cell.text)
     }
     io.write_byte(w, '\n')
   }
@@ -63,8 +65,8 @@ table_format :: proc(format: Format) -> (Format, bool) {
 }
 
 render_table :: proc(tbl: ^table.Table, format: Format = .Decorated) {
-  table.padding(tbl, 1, 1)
   stdout := table.stdio_writer()
+  table.padding(tbl, 1, 1)
   switch format {
   case .Plain: 
     table.write_plain_table(stdout, tbl)
